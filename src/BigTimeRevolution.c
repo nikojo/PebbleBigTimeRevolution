@@ -1,3 +1,4 @@
+// Copyright (C) 2013 by Tom Fukushima. All Rights Reserved.
 // Copyright (c) 2013 Douwe Maan <http://www.douwemaan.com/>
 // The above copyright notice shall be included in all copies or substantial portions of the program.
 
