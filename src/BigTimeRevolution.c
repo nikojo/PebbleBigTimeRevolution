@@ -9,41 +9,43 @@
 #include "pebble_fonts.h"
 
 
-#define MY_UUID { 0xA1, 0x23, 0x08, 0x61, 0xD4, 0xEB, 0x4F, 0x6E, 0xA2, 0xD0, 0xEA, 0xA2, 0xA0, 0x77, 0x97, 0xDD }
+#define MY_UUID { 0xB1, 0x23, 0x08, 0x61, 0xD4, 0xEB, 0x4F, 0x6E, 0xA2, 0xD0, 0xEA, 0xA2, 0xA0, 0x77, 0x97, 0xDE }
 PBL_APP_INFO(MY_UUID,
-             "Revolution", "Douwe Maan",
+             "Big Time Revolution", "Tom Fukushima",
              1, 3, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_WATCH_FACE);
 
 
 // Settings
-#define USE_AMERICAN_DATE_FORMAT      false
+#define USE_AMERICAN_DATE_FORMAT      true
 #define TIME_SLOT_ANIMATION_DURATION  500
 
 // Magic numbers
 #define SCREEN_WIDTH        144
 #define SCREEN_HEIGHT       168
 
-#define TIME_IMAGE_WIDTH    70
+#define TIME_IMAGE_WIDTH    58
 #define TIME_IMAGE_HEIGHT   70
 
-#define DATE_IMAGE_WIDTH    20
+#define DATE_IMAGE_WIDTH    18
 #define DATE_IMAGE_HEIGHT   20
 
 #define SECOND_IMAGE_WIDTH  10
 #define SECOND_IMAGE_HEIGHT 10
 
 #define DAY_IMAGE_WIDTH     20
-#define DAY_IMAGE_HEIGHT    10
+#define DAY_IMAGE_HEIGHT    20
 
 #define MARGIN              1
+#define MARGIN_TIME_X       13
+#define MARGIN_DATE_X       2
 #define TIME_SLOT_SPACE     2
-#define DATE_PART_SPACE     4
+#define DATE_PART_SPACE     10
 
 
 // Images
-#define NUMBER_OF_TIME_IMAGES 10
+#define NUMBER_OF_TIME_IMAGES 11
 const int TIME_IMAGE_RESOURCE_IDS[NUMBER_OF_TIME_IMAGES] = {
   RESOURCE_ID_IMAGE_TIME_0, 
   RESOURCE_ID_IMAGE_TIME_1, RESOURCE_ID_IMAGE_TIME_2, RESOURCE_ID_IMAGE_TIME_3, 
@@ -51,7 +53,7 @@ const int TIME_IMAGE_RESOURCE_IDS[NUMBER_OF_TIME_IMAGES] = {
   RESOURCE_ID_IMAGE_TIME_7, RESOURCE_ID_IMAGE_TIME_8, RESOURCE_ID_IMAGE_TIME_9
 };
 
-#define NUMBER_OF_DATE_IMAGES 10
+#define NUMBER_OF_DATE_IMAGES 11
 const int DATE_IMAGE_RESOURCE_IDS[NUMBER_OF_DATE_IMAGES] = {
   RESOURCE_ID_IMAGE_DATE_0, 
   RESOURCE_ID_IMAGE_DATE_1, RESOURCE_ID_IMAGE_DATE_2, RESOURCE_ID_IMAGE_DATE_3, 
@@ -154,7 +156,7 @@ void handle_deinit(AppContextRef ctx);
 
 // General
 BmpContainer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids) {
-  if (digit_value < 0 || digit_value > 9) {
+  if (digit_value < 0 || digit_value > 10) {
     return NULL;
   }
 
@@ -247,10 +249,16 @@ void display_time_value(int value, int row_number) {
   value = value % 100; // Maximum of two digits per row.
 
   for (int column_number = 1; column_number >= 0; column_number--) {
+
     int time_slot_number = (row_number * 2) + column_number;
 
     TimeSlot *time_slot = &time_slots[time_slot_number];
 
+    if (row_number == 0 && value == 0 && column_number == 0) { // ignore the leading 0 for hours
+      unload_digit_image_from_slot(&time_slot->slot);
+      return;
+    }
+	
     update_time_slot(time_slot, value % 10);
 
     value = value / 10;
@@ -289,7 +297,7 @@ void update_time_slot(TimeSlot *time_slot, int digit_value) {
 }
 
 GRect frame_for_time_slot(TimeSlot *time_slot) {
-  int x = MARGIN + (time_slot->slot.number % 2) * (TIME_IMAGE_WIDTH + TIME_SLOT_SPACE);
+  int x = MARGIN_TIME_X + (time_slot->slot.number % 2) * (TIME_IMAGE_WIDTH + TIME_SLOT_SPACE);
   int y = MARGIN + (time_slot->slot.number / 2) * (TIME_IMAGE_HEIGHT + TIME_SLOT_SPACE);
 
   return GRect(x, y, TIME_IMAGE_WIDTH, TIME_IMAGE_HEIGHT);
@@ -302,7 +310,7 @@ void slide_in_digit_image_into_time_slot(TimeSlot *time_slot, int digit_value) {
   int from_y = to_frame.origin.y;
   switch (time_slot->slot.number) {
     case 0:
-      from_x -= TIME_IMAGE_WIDTH + MARGIN;
+      from_x -= TIME_IMAGE_WIDTH + MARGIN_TIME_X;
       break;
     case 1:
       from_y -= TIME_IMAGE_HEIGHT + MARGIN;
@@ -311,7 +319,7 @@ void slide_in_digit_image_into_time_slot(TimeSlot *time_slot, int digit_value) {
       from_y += TIME_IMAGE_HEIGHT + MARGIN;
       break;
     case 3:
-      from_x += TIME_IMAGE_WIDTH + MARGIN;
+      from_x += TIME_IMAGE_WIDTH + MARGIN_TIME_X;
       break;
   }
   GRect from_frame = GRect(from_x, from_y, TIME_IMAGE_WIDTH, TIME_IMAGE_HEIGHT);
@@ -343,10 +351,10 @@ void slide_out_digit_image_from_time_slot(TimeSlot *time_slot) {
       to_y -= TIME_IMAGE_HEIGHT + MARGIN;
       break;
     case 1:
-      to_x += TIME_IMAGE_WIDTH + MARGIN;
+      to_x += TIME_IMAGE_WIDTH + MARGIN_TIME_X;
       break;
     case 2:
-      to_x -= TIME_IMAGE_WIDTH + MARGIN;
+      to_x -= TIME_IMAGE_WIDTH + MARGIN_TIME_X;
       break;
     case 3:
       to_y += TIME_IMAGE_HEIGHT + MARGIN;
@@ -380,10 +388,18 @@ void display_date_value(int value, int part_number) {
   value = value % 100; // Maximum of two digits per row.
 
   for (int column_number = 1; column_number >= 0; column_number--) {
+
     int date_slot_number = (part_number * 2) + column_number;
 
     Slot *date_slot = &date_slots[date_slot_number];
 
+#if USE_AMERICAN_DATE_FORMAT
+    if (part_number == 0 && column_number == 0 && value == 0) {  // ignore the leading 0 for months
+      unload_digit_image_from_slot(date_slot);
+      return;
+    }
+#endif
+    
     update_date_slot(date_slot, value % 10);
 
     value = value / 10;
@@ -395,9 +411,9 @@ void update_date_slot(Slot *date_slot, int digit_value) {
     return;
   }
 
-  int x = date_slot->number * (DATE_IMAGE_WIDTH + MARGIN);
+  int x = date_slot->number * DATE_IMAGE_WIDTH;
   if (date_slot->number >= 2) {
-    x += 3; // 3 extra pixels of space between the day and month
+    x += DATE_PART_SPACE; // extra pixels of space between the day and month
   }
   GRect frame =  GRect(x, 0, DATE_IMAGE_WIDTH, DATE_IMAGE_HEIGHT);
 
@@ -498,7 +514,7 @@ void handle_init(AppContextRef ctx) {
 
   // Date
   GRect date_layer_frame = GRectZero;
-  date_layer_frame.size.w   = DATE_IMAGE_WIDTH + MARGIN + DATE_IMAGE_WIDTH + DATE_PART_SPACE + DATE_IMAGE_WIDTH + MARGIN + DATE_IMAGE_WIDTH;
+  date_layer_frame.size.w   = DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH + DATE_PART_SPACE + DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH;
   date_layer_frame.size.h   = DATE_IMAGE_HEIGHT;
   date_layer_frame.origin.x = (SCREEN_WIDTH - date_layer_frame.size.w) / 2;
   date_layer_frame.origin.y = date_container_height - DATE_IMAGE_HEIGHT - MARGIN;
