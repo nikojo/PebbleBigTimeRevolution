@@ -9,8 +9,8 @@ I found the fonts of the Revolution watchface a little hard to read so I made th
 * Changed the day of the week to use the characters for the Japanese days of the week
 
 
-### Download version 1.2
-* [BigTimeRevolution-1.2.pbw](https://github.com/nikojo/PebbleBigTimeRevolution/tree/master/releases/BigTimeRevolution-1.2.pbw)
+### Download 
+* [Big Time Revolution](https://github.com/nikojo/PebbleBigTimeRevolution/tree/master/releases/)
 
 ## License
 Copyright (C) 2013 by Tom Fukushima. All Rights Reserved.
