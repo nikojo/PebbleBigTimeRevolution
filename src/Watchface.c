@@ -150,6 +150,10 @@ void update_date_slot(Slot *date_slot, int digit_value);
 // Seconds
 void update_second_slot(Slot *second_slot, int digit_value);
 
+// Connection
+void fail_mode();
+void reset_fail_mode();
+
 // handlers
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
@@ -330,27 +334,46 @@ GRect frame_for_time_slot(Slot *time_slot) {
 
 
 // Date
-void display_date_value(int value, int part_number) {
-  value = value % 100; // Maximum of two digits per row.
 
+void display_left_date_value(int value) {
   for (int column_number = 1; column_number >= 0; column_number--) {
 
-    int date_slot_number = (part_number * 2) + column_number;
+    Slot *date_slot = &date_slots[column_number];
 
-    Slot *date_slot = &date_slots[date_slot_number];
-
-#if USE_AMERICAN_DATE_FORMAT
-    if (part_number == 0 && column_number == 0 && value == 0) {  // ignore the leading 0 for months
+    if (column_number == 0 && value == 0) {  // ignore the leading 0 for months
       unload_digit_image_from_slot(date_slot);
       return;
     }
-#endif
     
     int ix = value % 10;
     update_date_slot(date_slot, inverted ? ix + 10 : ix);
 
     value = value / 10;
   }
+}
+
+void display_right_date_value(int value) {
+  // left justify and remove leading 0
+  if (value > 9) {
+    // 2 digits required
+    for (int column_number = 3; column_number >= 2; column_number--) {
+      Slot *date_slot = &date_slots[column_number];
+      int ix = value % 10;
+      update_date_slot(date_slot, inverted ? ix + 10 : ix);
+      value = value / 10;
+    }
+  } else {
+    // only 1 digit
+    update_date_slot(&date_slots[2], inverted ? value + 10 : value);
+    unload_digit_image_from_slot(&date_slots[3]);
+  }
+}
+
+void display_date_value(int value, int part_number) {
+  value = value % 100; // Maximum of two digits per row.
+  if (part_number == 0) display_left_date_value(value);
+  else display_right_date_value(value);
+
 }
 
 void update_date_slot(Slot *date_slot, int digit_value) {
@@ -360,7 +383,7 @@ void update_date_slot(Slot *date_slot, int digit_value) {
 
   int x = date_slot->number * DATE_IMAGE_WIDTH;
   if (date_slot->number >= 2) {
-    x += DATE_PART_SPACE; // extra pixels of space between the day and month
+    x += DATE_PART_SPACE; // space for the slash
   }
   GRect frame =  GRect(x, 0, DATE_IMAGE_WIDTH, DATE_IMAGE_HEIGHT);
 
