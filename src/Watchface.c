@@ -467,7 +467,6 @@ void init() {
 
   window = window_create();
   window_stack_push(window, true /* Animated */);
-  window_set_background_color(window, GColorBlack);
 
   // Time slots
   for (int i = 0; i < NUMBER_OF_TIME_SLOTS; i++) {
@@ -551,6 +550,7 @@ void init() {
 
   // Display
   inverted = !bluetooth_connection_service_peek();
+  window_set_background_color(window, inverted ? GColorWhite : GColorBlack);
   struct tm *tick_time;
   time_t current_time = time(NULL);
   tick_time = localtime(&current_time);
