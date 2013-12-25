@@ -10,7 +10,6 @@
 
 // Settings
 #define USE_AMERICAN_DATE_FORMAT      true
-#define TIME_SLOT_ANIMATION_DURATION  500
 
 // Magic numbers
 #define SCREEN_WIDTH        144
