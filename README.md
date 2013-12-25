@@ -1,4 +1,4 @@
-## BigTimeRevolution watchface
+## Big Time with Japanese Days watchface
 
 
 Implemented by Tom Fukushima forked from the code of the Revolution watchface by Douwe Maan.
@@ -7,6 +7,7 @@ I found the fonts of the Revolution watchface a little hard to read so I made th
 * Changed the fonts to the Ubuntu San Serif font available in Gimp
 * Removed the leading zeros for hours and months
 * Changed the day of the week to use the characters for the Japanese days of the week
+* Removed the animations for when the hours and minutes change
 
 Notifies when watch loses connection to the phone. It will vibrate and then the display will use inverted colors/white background. Once the phone is reconnected the screen will go back to normal.
 

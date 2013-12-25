@@ -4,7 +4,7 @@
   "longName": "Big Time Rev Prox Alert",
   "companyName": "Tom Fukushima",
   "versionCode": 2,
-  "versionLabel": "2.4.0",
+  "versionLabel": "2.5.0",
   "watchapp": {
     "watchface": true
   },
@@ -116,56 +116,6 @@
         "type": "png",
         "name": "IMAGE_DATE_9",
         "file": "images/date_9.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_0",
-        "file": "images/second_0.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_1",
-        "file": "images/second_1.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_2",
-        "file": "images/second_2.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_3",
-        "file": "images/second_3.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_4",
-        "file": "images/second_4.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_5",
-        "file": "images/second_5.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_6",
-        "file": "images/second_6.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_7",
-        "file": "images/second_7.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_8",
-        "file": "images/second_8.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_9",
-        "file": "images/second_9.png"
       },
       {
         "type": "png",
@@ -304,56 +254,6 @@
       },
       {
         "type": "png",
-        "name": "IMAGE_SECOND_10",
-        "file": "images/second_10.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_11",
-        "file": "images/second_11.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_12",
-        "file": "images/second_12.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_13",
-        "file": "images/second_13.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_14",
-        "file": "images/second_14.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_15",
-        "file": "images/second_15.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_16",
-        "file": "images/second_16.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_17",
-        "file": "images/second_17.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_18",
-        "file": "images/second_18.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SECOND_19",
-        "file": "images/second_19.png"
-      },
-      {
-        "type": "png",
         "name": "IMAGE_DAY_10",
         "file": "images/day_10.png"
       },
@@ -386,6 +286,16 @@
         "type": "png",
         "name": "IMAGE_DAY_16",
         "file": "images/day_16.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SLASH",
+        "file": "images/slash.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SLASH_INV",
+        "file": "images/slash_inv.png"
       }
     ]
   }

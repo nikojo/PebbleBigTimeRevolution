@@ -21,8 +21,8 @@
 #define DATE_IMAGE_WIDTH    18
 #define DATE_IMAGE_HEIGHT   20
 
-#define SECOND_IMAGE_WIDTH  10
-#define SECOND_IMAGE_HEIGHT 10
+#define SECOND_IMAGE_WIDTH  18
+#define SECOND_IMAGE_HEIGHT 20
 
 #define DAY_IMAGE_WIDTH     20
 #define DAY_IMAGE_HEIGHT    20
@@ -31,7 +31,7 @@
 #define MARGIN_TIME_X       13
 #define MARGIN_DATE_X       2
 #define TIME_SLOT_SPACE     2
-#define DATE_PART_SPACE     10
+#define DATE_PART_SPACE     9
 
 
 // Images
@@ -61,14 +61,14 @@ const int DATE_IMAGE_RESOURCE_IDS[NUMBER_OF_DATE_IMAGES] = {
 
 #define NUMBER_OF_SECOND_IMAGES 20
 const int SECOND_IMAGE_RESOURCE_IDS[NUMBER_OF_SECOND_IMAGES] = {
-  RESOURCE_ID_IMAGE_SECOND_0, 
-  RESOURCE_ID_IMAGE_SECOND_1, RESOURCE_ID_IMAGE_SECOND_2, RESOURCE_ID_IMAGE_SECOND_3, 
-  RESOURCE_ID_IMAGE_SECOND_4, RESOURCE_ID_IMAGE_SECOND_5, RESOURCE_ID_IMAGE_SECOND_6, 
-  RESOURCE_ID_IMAGE_SECOND_7, RESOURCE_ID_IMAGE_SECOND_8, RESOURCE_ID_IMAGE_SECOND_9,
-  RESOURCE_ID_IMAGE_SECOND_10, 
-  RESOURCE_ID_IMAGE_SECOND_11, RESOURCE_ID_IMAGE_SECOND_12, RESOURCE_ID_IMAGE_SECOND_13, 
-  RESOURCE_ID_IMAGE_SECOND_14, RESOURCE_ID_IMAGE_SECOND_15, RESOURCE_ID_IMAGE_SECOND_16, 
-  RESOURCE_ID_IMAGE_SECOND_17, RESOURCE_ID_IMAGE_SECOND_18, RESOURCE_ID_IMAGE_SECOND_19
+  RESOURCE_ID_IMAGE_DATE_0, 
+  RESOURCE_ID_IMAGE_DATE_1, RESOURCE_ID_IMAGE_DATE_2, RESOURCE_ID_IMAGE_DATE_3, 
+  RESOURCE_ID_IMAGE_DATE_4, RESOURCE_ID_IMAGE_DATE_5, RESOURCE_ID_IMAGE_DATE_6, 
+  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9,
+  RESOURCE_ID_IMAGE_DATE_10, 
+  RESOURCE_ID_IMAGE_DATE_11, RESOURCE_ID_IMAGE_DATE_12, RESOURCE_ID_IMAGE_DATE_13, 
+  RESOURCE_ID_IMAGE_DATE_14, RESOURCE_ID_IMAGE_DATE_15, RESOURCE_ID_IMAGE_DATE_16, 
+  RESOURCE_ID_IMAGE_DATE_17, RESOURCE_ID_IMAGE_DATE_18, RESOURCE_ID_IMAGE_DATE_19
 };
 
 #define NUMBER_OF_DAY_IMAGES 14
@@ -113,25 +113,30 @@ Layer *seconds_layer;
 Slot second_slots[NUMBER_OF_SECOND_SLOTS];
 
 // Day
-typedef struct DayItem {
+typedef struct ImageItem {
   BitmapLayer   *image_layer;
   GBitmap       *bitmap;
-  Layer         *layer;
+  Layer         *parent;
+  GRect         frame;
   bool          loaded;
-} DayItem;
-DayItem day_item;
-GRect day_frame;
+} ImageItem;
+ImageItem day_item;
+ImageItem slash_item;
 
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids);
 void unload_digit_image_from_slot(Slot *slot);
+void unload_image_item(ImageItem * item);
 void unload_day_item();
+void unload_slash_item();
 
 // Display
 void display_time(struct tm *tick_time);
 void display_date(struct tm *tick_time);
 void display_seconds(struct tm *tick_time);
+void display_item(ImageItem * item, uint32_t resource_id);
 void display_day(struct tm *tick_time);
+void display_slash();
 
 // Time
 void display_time_value(int value, int row_number);
@@ -167,7 +172,9 @@ BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *pare
   slot->image_layer = bitmap_layer_create(frame);
   slot->bitmap = gbitmap_create_with_resource(digit_resource_ids[digit_value]);
   bitmap_layer_set_bitmap(slot->image_layer, slot->bitmap);
-  layer_add_child(parent_layer, bitmap_layer_get_layer(slot->image_layer));
+  Layer * layer = bitmap_layer_get_layer(slot->image_layer);
+  layer_set_clips(layer, true);
+  layer_add_child(parent_layer, layer);
 
   return slot->image_layer;
 }
@@ -184,10 +191,19 @@ void unload_digit_image_from_slot(Slot *slot) {
   slot->state = EMPTY_SLOT;
 }
 
+void unload_image_item(ImageItem *item) {
+  layer_remove_from_parent(bitmap_layer_get_layer(item->image_layer));
+  gbitmap_destroy(item->bitmap);
+  bitmap_layer_destroy(item->image_layer);
+}
+
+
 void unload_day_item() {
-  layer_remove_from_parent(bitmap_layer_get_layer(day_item.image_layer));
-  gbitmap_destroy(day_item.bitmap);
-  bitmap_layer_destroy(day_item.image_layer);
+  unload_image_item(&day_item);
+}
+
+void unload_slash_item() {
+  unload_image_item(&slash_item);
 }
 
 void unload_all_images() {
@@ -197,6 +213,7 @@ void unload_all_images() {
   for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) unload_digit_image_from_slot(&second_slots[i]);
 
   unload_day_item();
+  unload_slash_item();
 
 }
 
@@ -243,20 +260,31 @@ void display_seconds(struct tm *tick_time) {
   }
 }
 
-void display_day(struct tm *tick_time) {
-  if (day_item.loaded) {
-    layer_remove_from_parent(bitmap_layer_get_layer(day_item.image_layer));
-    gbitmap_destroy(day_item.bitmap);
-    bitmap_layer_destroy(day_item.image_layer);
+void display_item(ImageItem * item, uint32_t resource_id) {
+  if (item->loaded) {
+    layer_remove_from_parent(bitmap_layer_get_layer(item->image_layer));
+    gbitmap_destroy(item->bitmap);
+    bitmap_layer_destroy(item->image_layer);
   }
 
-  day_item.image_layer = bitmap_layer_create(day_frame);
-  int ix = tick_time->tm_wday;
-  day_item.bitmap = gbitmap_create_with_resource(DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix]);
-  bitmap_layer_set_bitmap(day_item.image_layer, day_item.bitmap);
-  layer_add_child(day_item.layer, bitmap_layer_get_layer(day_item.image_layer));
+  item->image_layer = bitmap_layer_create(item->frame);
+  item->bitmap = gbitmap_create_with_resource(resource_id);
+  bitmap_layer_set_bitmap(item->image_layer, item->bitmap);
+  Layer * layer = bitmap_layer_get_layer(item->image_layer);
+  layer_set_clips(layer, true);
+  layer_add_child(item->parent, layer);
 
-  day_item.loaded = true;
+  item->loaded = true;
+}
+
+void display_day(struct tm *tick_time) {
+  int ix = tick_time->tm_wday;
+  display_item(&day_item, DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix]);
+}
+
+void display_slash() {
+  display_item(&slash_item, 
+    inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH);
 }
 
 // Time
@@ -392,7 +420,7 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
   if (inverted && failed_count == 0)
     reset_fail_mode();
-  else if (!inverted && failed_count > 5) // only go to fail mode if we fail for 5 seconds.
+  else if (!inverted && failed_count >= 5) // only go to fail mode if we fail for 5 seconds.
                                           // maybe there was just a blip in the BT connection
     fail_mode();
 
@@ -404,6 +432,8 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
     display_day(tick_time);
     display_date(tick_time);
   }
+
+  if (needToReload) display_slash();
 
   display_seconds(tick_time);
 
@@ -455,29 +485,34 @@ void init() {
   int date_container_height = SCREEN_HEIGHT - SCREEN_WIDTH;
 
   date_container_layer = layer_create(GRect(0, SCREEN_WIDTH, SCREEN_WIDTH, date_container_height));
+  layer_set_clips(date_container_layer, true);
   layer_add_child(root_layer, date_container_layer);
-
-  // Day
-  day_frame = GRect(
-    MARGIN, 
-    date_container_height - DAY_IMAGE_HEIGHT - MARGIN, 
-    DAY_IMAGE_WIDTH, 
-    DAY_IMAGE_HEIGHT
-  );
-
-  // Day slot
-  day_item.loaded = false;
-  day_item.layer = date_container_layer;
 
   // Date
   GRect date_layer_frame = GRectZero;
   date_layer_frame.size.w   = DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH + DATE_PART_SPACE + DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH;
   date_layer_frame.size.h   = DATE_IMAGE_HEIGHT;
-  date_layer_frame.origin.x = (SCREEN_WIDTH - date_layer_frame.size.w) / 2;
+  date_layer_frame.origin.x = MARGIN + DATE_IMAGE_WIDTH; //(SCREEN_WIDTH - date_layer_frame.size.w) / 2;
   date_layer_frame.origin.y = date_container_height - DATE_IMAGE_HEIGHT - MARGIN;
 
   date_layer = layer_create(date_layer_frame);
+  layer_set_clips(date_layer, true);
   layer_add_child(date_container_layer, date_layer);
+
+  // Slash
+  slash_item.frame = GRect(DATE_IMAGE_WIDTH * 2, 0, DATE_PART_SPACE, DATE_IMAGE_HEIGHT);
+  slash_item.loaded = false;
+  slash_item.parent = date_layer;
+
+  // Day slot
+  day_item.frame = GRect(
+    MARGIN, 
+    date_container_height - DAY_IMAGE_HEIGHT - MARGIN, 
+    DAY_IMAGE_WIDTH, 
+    DAY_IMAGE_HEIGHT
+  );
+  day_item.loaded = false;
+  day_item.parent = date_container_layer;
 
   // Seconds
   GRect seconds_layer_frame = GRect(
@@ -487,10 +522,12 @@ void init() {
     SECOND_IMAGE_HEIGHT
   );
   seconds_layer = layer_create(seconds_layer_frame);
+  layer_set_clips(seconds_layer, true);
   layer_add_child(date_container_layer, seconds_layer);
 
 
   // Display
+  inverted = !bluetooth_connection_service_peek();
   struct tm *tick_time;
   time_t current_time = time(NULL);
   tick_time = localtime(&current_time);
@@ -498,6 +535,7 @@ void init() {
   display_time(tick_time);
   display_day(tick_time);
   display_date(tick_time);
+  display_slash();
   display_seconds(tick_time);
 
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
@@ -515,6 +553,10 @@ void deinit() {
   }
 
   if (day_item.loaded) {
-      unload_day_item();
+    unload_day_item();
   }
+
+  if (slash_item.loaded) {
+    unload_slash_item();
+  } 
 }
