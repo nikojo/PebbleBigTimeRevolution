@@ -8,12 +8,11 @@ I found the fonts of the Revolution watchface a little hard to read so I made th
 * Removed the leading zeros for hours and months
 * Changed the day of the week to use the characters for the Japanese days of the week
 
+Notifies when watch loses connection to the phone. It will vibrate and then the display will use inverted colors/white background. Once the phone is reconnected the screen will go back to normal.
 
-### Download 
-* [Big Time Revolution](https://github.com/nikojo/PebbleBigTimeRevolution/tree/master/releases/)
 
 ## License
-Copyright (C) 2013 by Tom Fukushima. All Rights Reserved.
+Copyright (C) 2013-2014 by Tom Fukushima. All Rights Reserved.
 Copyright (c) 2013 [Douwe Maan](http://www.douwemaan.com/)
 
 This program is free software: you can redistribute it and/or modify

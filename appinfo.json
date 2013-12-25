@@ -1,10 +1,10 @@
 {
-  "uuid": "b1230861-d4eb-4f6e-a2d0-eaa2a07797de",
-  "shortName": "Big Time Revolution",
-  "longName": "Big Time Revolution",
+  "uuid": "b1230861-d4eb-4f6e-a2d0-eaa2a07797df",
+  "shortName": "Big Time Rev Prox Alert",
+  "longName": "Big Time Rev Prox Alert",
   "companyName": "Tom Fukushima",
-  "versionCode": 1,
-  "versionLabel": "1.3.0",
+  "versionCode": 2,
+  "versionLabel": "2.4.0",
   "watchapp": {
     "watchface": true
   },
@@ -201,6 +201,191 @@
         "type": "png",
         "name": "IMAGE_DAY_6",
         "file": "images/day_6.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_10",
+        "file": "images/time_10.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_11",
+        "file": "images/time_11.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_12",
+        "file": "images/time_12.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_13",
+        "file": "images/time_13.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_14",
+        "file": "images/time_14.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_15",
+        "file": "images/time_15.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_16",
+        "file": "images/time_16.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_17",
+        "file": "images/time_17.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_18",
+        "file": "images/time_18.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TIME_19",
+        "file": "images/time_19.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_10",
+        "file": "images/date_10.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_11",
+        "file": "images/date_11.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_12",
+        "file": "images/date_12.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_13",
+        "file": "images/date_13.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_14",
+        "file": "images/date_14.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_15",
+        "file": "images/date_15.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_16",
+        "file": "images/date_16.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_17",
+        "file": "images/date_17.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_18",
+        "file": "images/date_18.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DATE_19",
+        "file": "images/date_19.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_10",
+        "file": "images/second_10.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_11",
+        "file": "images/second_11.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_12",
+        "file": "images/second_12.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_13",
+        "file": "images/second_13.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_14",
+        "file": "images/second_14.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_15",
+        "file": "images/second_15.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_16",
+        "file": "images/second_16.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_17",
+        "file": "images/second_17.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_18",
+        "file": "images/second_18.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_SECOND_19",
+        "file": "images/second_19.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_10",
+        "file": "images/day_10.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_11",
+        "file": "images/day_11.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_12",
+        "file": "images/day_12.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_13",
+        "file": "images/day_13.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_14",
+        "file": "images/day_14.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_15",
+        "file": "images/day_15.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_DAY_16",
+        "file": "images/day_16.png"
       }
     ]
   }

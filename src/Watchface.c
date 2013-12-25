@@ -35,41 +35,59 @@
 
 
 // Images
-#define NUMBER_OF_TIME_IMAGES 11
+#define NUMBER_OF_TIME_IMAGES 20
 const int TIME_IMAGE_RESOURCE_IDS[NUMBER_OF_TIME_IMAGES] = {
   RESOURCE_ID_IMAGE_TIME_0, 
   RESOURCE_ID_IMAGE_TIME_1, RESOURCE_ID_IMAGE_TIME_2, RESOURCE_ID_IMAGE_TIME_3, 
   RESOURCE_ID_IMAGE_TIME_4, RESOURCE_ID_IMAGE_TIME_5, RESOURCE_ID_IMAGE_TIME_6, 
-  RESOURCE_ID_IMAGE_TIME_7, RESOURCE_ID_IMAGE_TIME_8, RESOURCE_ID_IMAGE_TIME_9
+  RESOURCE_ID_IMAGE_TIME_7, RESOURCE_ID_IMAGE_TIME_8, RESOURCE_ID_IMAGE_TIME_9,
+  RESOURCE_ID_IMAGE_TIME_10, 
+  RESOURCE_ID_IMAGE_TIME_11, RESOURCE_ID_IMAGE_TIME_12, RESOURCE_ID_IMAGE_TIME_13, 
+  RESOURCE_ID_IMAGE_TIME_14, RESOURCE_ID_IMAGE_TIME_15, RESOURCE_ID_IMAGE_TIME_16, 
+  RESOURCE_ID_IMAGE_TIME_17, RESOURCE_ID_IMAGE_TIME_18, RESOURCE_ID_IMAGE_TIME_19
 };
 
-#define NUMBER_OF_DATE_IMAGES 11
+#define NUMBER_OF_DATE_IMAGES 20
 const int DATE_IMAGE_RESOURCE_IDS[NUMBER_OF_DATE_IMAGES] = {
   RESOURCE_ID_IMAGE_DATE_0, 
   RESOURCE_ID_IMAGE_DATE_1, RESOURCE_ID_IMAGE_DATE_2, RESOURCE_ID_IMAGE_DATE_3, 
   RESOURCE_ID_IMAGE_DATE_4, RESOURCE_ID_IMAGE_DATE_5, RESOURCE_ID_IMAGE_DATE_6, 
-  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9
+  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9,
+  RESOURCE_ID_IMAGE_DATE_10, 
+  RESOURCE_ID_IMAGE_DATE_11, RESOURCE_ID_IMAGE_DATE_12, RESOURCE_ID_IMAGE_DATE_13, 
+  RESOURCE_ID_IMAGE_DATE_14, RESOURCE_ID_IMAGE_DATE_15, RESOURCE_ID_IMAGE_DATE_16, 
+  RESOURCE_ID_IMAGE_DATE_17, RESOURCE_ID_IMAGE_DATE_18, RESOURCE_ID_IMAGE_DATE_19
 };
 
-#define NUMBER_OF_SECOND_IMAGES 10
+#define NUMBER_OF_SECOND_IMAGES 20
 const int SECOND_IMAGE_RESOURCE_IDS[NUMBER_OF_SECOND_IMAGES] = {
   RESOURCE_ID_IMAGE_SECOND_0, 
   RESOURCE_ID_IMAGE_SECOND_1, RESOURCE_ID_IMAGE_SECOND_2, RESOURCE_ID_IMAGE_SECOND_3, 
   RESOURCE_ID_IMAGE_SECOND_4, RESOURCE_ID_IMAGE_SECOND_5, RESOURCE_ID_IMAGE_SECOND_6, 
-  RESOURCE_ID_IMAGE_SECOND_7, RESOURCE_ID_IMAGE_SECOND_8, RESOURCE_ID_IMAGE_SECOND_9
+  RESOURCE_ID_IMAGE_SECOND_7, RESOURCE_ID_IMAGE_SECOND_8, RESOURCE_ID_IMAGE_SECOND_9,
+  RESOURCE_ID_IMAGE_SECOND_10, 
+  RESOURCE_ID_IMAGE_SECOND_11, RESOURCE_ID_IMAGE_SECOND_12, RESOURCE_ID_IMAGE_SECOND_13, 
+  RESOURCE_ID_IMAGE_SECOND_14, RESOURCE_ID_IMAGE_SECOND_15, RESOURCE_ID_IMAGE_SECOND_16, 
+  RESOURCE_ID_IMAGE_SECOND_17, RESOURCE_ID_IMAGE_SECOND_18, RESOURCE_ID_IMAGE_SECOND_19
 };
 
-#define NUMBER_OF_DAY_IMAGES 7
+#define NUMBER_OF_DAY_IMAGES 14
 const int DAY_IMAGE_RESOURCE_IDS[NUMBER_OF_DAY_IMAGES] = {
   RESOURCE_ID_IMAGE_DAY_0, RESOURCE_ID_IMAGE_DAY_1, RESOURCE_ID_IMAGE_DAY_2, 
   RESOURCE_ID_IMAGE_DAY_3, RESOURCE_ID_IMAGE_DAY_4, RESOURCE_ID_IMAGE_DAY_5, 
-  RESOURCE_ID_IMAGE_DAY_6
+  RESOURCE_ID_IMAGE_DAY_6,
+  RESOURCE_ID_IMAGE_DAY_10, RESOURCE_ID_IMAGE_DAY_11, RESOURCE_ID_IMAGE_DAY_12, 
+  RESOURCE_ID_IMAGE_DAY_13, RESOURCE_ID_IMAGE_DAY_14, RESOURCE_ID_IMAGE_DAY_15, 
+  RESOURCE_ID_IMAGE_DAY_16
 };
 
 
 // Main
 Window *window;
 Layer *date_container_layer;
+bool inverted = false;
+bool needToReload = false; // true if all slots were unloaded
+int failed_count = 0; // number of times in a row that the bluetooth check has failed
 
 #define EMPTY_SLOT -1
 
@@ -107,6 +125,7 @@ GRect day_frame;
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids);
 void unload_digit_image_from_slot(Slot *slot);
+void unload_day_item();
 
 // Display
 void display_time(struct tm *tick_time);
@@ -136,7 +155,7 @@ void deinit();
 
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids) {
-  if (digit_value < 0 || digit_value > 10) {
+  if (digit_value < 0 || digit_value > 19) {
     return NULL;
   }
 
@@ -163,6 +182,22 @@ void unload_digit_image_from_slot(Slot *slot) {
   bitmap_layer_destroy(slot->image_layer);
 
   slot->state = EMPTY_SLOT;
+}
+
+void unload_day_item() {
+  layer_remove_from_parent(bitmap_layer_get_layer(day_item.image_layer));
+  gbitmap_destroy(day_item.bitmap);
+  bitmap_layer_destroy(day_item.image_layer);
+}
+
+void unload_all_images() {
+  needToReload = true;
+  for (int i = 0; i < NUMBER_OF_TIME_SLOTS; i++) unload_digit_image_from_slot(&time_slots[i]);
+  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) unload_digit_image_from_slot(&date_slots[i]);
+  for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) unload_digit_image_from_slot(&second_slots[i]);
+
+  unload_day_item();
+
 }
 
 // Display
@@ -201,7 +236,8 @@ void display_seconds(struct tm *tick_time) {
   for (int second_slot_number = 1; second_slot_number >= 0; second_slot_number--) {
     Slot *second_slot = &second_slots[second_slot_number];
 
-    update_second_slot(second_slot, seconds % 10);
+    int ix = seconds % 10;
+    update_second_slot(second_slot, inverted ? ix + 10 : ix);
     
     seconds = seconds / 10;
   }
@@ -215,7 +251,8 @@ void display_day(struct tm *tick_time) {
   }
 
   day_item.image_layer = bitmap_layer_create(day_frame);
-  day_item.bitmap = gbitmap_create_with_resource(DAY_IMAGE_RESOURCE_IDS[tick_time->tm_wday]);
+  int ix = tick_time->tm_wday;
+  day_item.bitmap = gbitmap_create_with_resource(DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix]);
   bitmap_layer_set_bitmap(day_item.image_layer, day_item.bitmap);
   layer_add_child(day_item.layer, bitmap_layer_get_layer(day_item.image_layer));
 
@@ -237,7 +274,8 @@ void display_time_value(int value, int row_number) {
       return;
     }
 	
-    update_time_slot(time_slot, value % 10);
+    int ix = value % 10;       
+    update_time_slot(time_slot, inverted ? ix + 10 : ix);
 
     value = value / 10;
   }
@@ -280,7 +318,8 @@ void display_date_value(int value, int part_number) {
     }
 #endif
     
-    update_date_slot(date_slot, value % 10);
+    int ix = value % 10;
+    update_date_slot(date_slot, inverted ? ix + 10 : ix);
 
     value = value / 10;
   }
@@ -318,23 +357,57 @@ void update_second_slot(Slot *second_slot, int digit_value) {
   load_digit_image_into_slot(second_slot, digit_value, seconds_layer, frame, SECOND_IMAGE_RESOURCE_IDS);
 }
 
+void fail_mode() {
+  if (!inverted) {
+    inverted = true;
+    unload_all_images(); // when background changes all images need to be refreshed
+    vibes_long_pulse();
+    window_set_background_color(window, GColorWhite);
+  }
+}
+
+void reset_fail_mode() {
+  if (inverted) {
+    inverted = false;
+    unload_all_images(); // when background changes all images need to be refreshed
+    window_set_background_color(window, GColorBlack);
+  }
+}
+
+
 int main() {
   init();
   app_event_loop();
   deinit();
 }
 
-static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-  display_seconds(tick_time);
 
-  if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
+static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
+  if (needToReload) return; // already still processing a previous tick
+
+  if (bluetooth_connection_service_peek())
+      failed_count = 0;
+  else
+      failed_count++;
+
+  if (inverted && failed_count == 0)
+    reset_fail_mode();
+  else if (!inverted && failed_count > 5) // only go to fail mode if we fail for 5 seconds.
+                                          // maybe there was just a blip in the BT connection
+    fail_mode();
+
+  if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT || needToReload) {
     display_time(tick_time);
   }
 
-  if ((units_changed & DAY_UNIT) == DAY_UNIT) {
+  if ((units_changed & DAY_UNIT) == DAY_UNIT || needToReload) {
     display_day(tick_time);
     display_date(tick_time);
   }
+
+  display_seconds(tick_time);
+
+  needToReload = false;
 }
 
 void init() {
@@ -442,8 +515,6 @@ void deinit() {
   }
 
   if (day_item.loaded) {
-      layer_remove_from_parent(bitmap_layer_get_layer(day_item.image_layer));
-      gbitmap_destroy(day_item.bitmap);
-      bitmap_layer_destroy(day_item.image_layer);
+      unload_day_item();
   }
 }
