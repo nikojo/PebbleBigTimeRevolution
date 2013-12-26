@@ -32,6 +32,8 @@
 #define MARGIN_DATE_X       2
 #define TIME_SLOT_SPACE     2
 #define DATE_PART_SPACE     9
+#define DATE_CONTAINER_HEIGHT SCREEN_HEIGHT - SCREEN_WIDTH
+
 
 
 // Images
@@ -89,6 +91,7 @@ bool inverted = false;
 bool needToReload = false; // true if all slots were unloaded
 int failed_count = 0; // number of times in a row that the bluetooth check has failed
 
+
 #define EMPTY_SLOT -1
 
 typedef struct Slot {
@@ -103,9 +106,15 @@ Layer *time_layer;
 Slot time_slots[NUMBER_OF_TIME_SLOTS];
 
 // Date
+typedef struct DateSlot {
+  Slot slot;
+  GRect frame;
+} DateSlot;
+
 #define NUMBER_OF_DATE_SLOTS 4
 Layer *date_layer;
-Slot date_slots[NUMBER_OF_DATE_SLOTS];
+int date_layer_width;
+DateSlot date_slots[NUMBER_OF_DATE_SLOTS];
 
 // Seconds
 #define NUMBER_OF_SECOND_SLOTS 2
@@ -116,7 +125,6 @@ Slot second_slots[NUMBER_OF_SECOND_SLOTS];
 typedef struct ImageItem {
   BitmapLayer   *image_layer;
   GBitmap       *bitmap;
-  Layer         *parent;
   GRect         frame;
   bool          loaded;
 } ImageItem;
@@ -129,12 +137,12 @@ void unload_digit_image_from_slot(Slot *slot);
 void unload_image_item(ImageItem * item);
 void unload_day_item();
 void unload_slash_item();
+void create_date_layer(struct tm *tick_time);
 
 // Display
 void display_time(struct tm *tick_time);
 void display_date(struct tm *tick_time);
 void display_seconds(struct tm *tick_time);
-void display_item(ImageItem * item, uint32_t resource_id);
 void display_day(struct tm *tick_time);
 void display_slash();
 
@@ -145,7 +153,7 @@ GRect frame_for_time_slot(Slot *time_slot);
 
 // Date
 void display_date_value(int value, int part_number);
-void update_date_slot(Slot *date_slot, int digit_value);
+void update_date_slot(DateSlot *date_slot, int digit_value);
 
 // Seconds
 void update_second_slot(Slot *second_slot, int digit_value);
@@ -196,9 +204,12 @@ void unload_digit_image_from_slot(Slot *slot) {
 }
 
 void unload_image_item(ImageItem *item) {
-  layer_remove_from_parent(bitmap_layer_get_layer(item->image_layer));
-  gbitmap_destroy(item->bitmap);
-  bitmap_layer_destroy(item->image_layer);
+  if (item->loaded) {
+    layer_remove_from_parent(bitmap_layer_get_layer(item->image_layer));
+    gbitmap_destroy(item->bitmap);
+    bitmap_layer_destroy(item->image_layer);
+    item->loaded = false;
+  }
 }
 
 
@@ -213,13 +224,54 @@ void unload_slash_item() {
 void unload_all_images() {
   needToReload = true;
   for (int i = 0; i < NUMBER_OF_TIME_SLOTS; i++) unload_digit_image_from_slot(&time_slots[i]);
-  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) unload_digit_image_from_slot(&date_slots[i]);
+  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) unload_digit_image_from_slot(&date_slots[i].slot);
   for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) unload_digit_image_from_slot(&second_slots[i]);
 
   unload_day_item();
   unload_slash_item();
-
 }
+
+void create_date_frames(int left_digit_count, int right_digit_count) {
+  GRect base_frame = GRect(0, 0, DATE_IMAGE_WIDTH, DATE_IMAGE_HEIGHT);
+  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; ++i)
+    date_slots[i].frame = base_frame;
+  date_slots[1].frame.origin.x = date_slots[0].frame.origin.x + (left_digit_count > 1 ? DATE_IMAGE_WIDTH : 0);
+  date_slots[2].frame.origin.x = date_slots[1].frame.origin.x + DATE_IMAGE_WIDTH + DATE_PART_SPACE;
+  date_slots[3].frame.origin.x = date_slots[2].frame.origin.x + (right_digit_count > 1 ? DATE_IMAGE_WIDTH : 0);
+}
+
+void create_date_layer(struct tm *tick_time) {
+  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; ++i) {
+    unload_digit_image_from_slot(&date_slots[i].slot);
+  }
+  unload_slash_item();
+
+  if (date_layer != NULL) {
+    layer_remove_from_parent(date_layer);
+    layer_destroy(date_layer);
+    date_layer = NULL;
+  }
+  int month_digit_count = tick_time->tm_mon > 8 ? 2 : 1;
+  int day_digit_count = tick_time->tm_mday > 9 ? 2 : 1; 
+
+  date_layer_width = DATE_IMAGE_WIDTH * month_digit_count + DATE_PART_SPACE + DATE_IMAGE_WIDTH * day_digit_count;
+  GRect date_layer_rect = GRect(MARGIN, DATE_CONTAINER_HEIGHT - SECOND_IMAGE_HEIGHT - MARGIN,  
+    date_layer_width, DATE_IMAGE_HEIGHT + MARGIN);
+  date_layer = layer_create(date_layer_rect);  
+  layer_set_clips(date_layer, true);
+  layer_add_child(date_container_layer, date_layer);
+
+#if USE_AMERICAN_DATE_FORMAT
+  slash_item.frame = GRect(month_digit_count * DATE_IMAGE_WIDTH, 
+    0, DATE_PART_SPACE, DATE_IMAGE_HEIGHT);
+  create_date_frames(month_digit_count, day_digit_count);
+#else
+  slash_item.frame = GRect(day_digit_count * DATE_IMAGE_WIDTH, 
+    0, DATE_PART_SPACE, DATE_IMAGE_HEIGHT);
+  create_date_frames(day_digit_count, month_digit_count);
+#endif
+}
+
 
 // Display
 void display_time(struct tm *tick_time) {
@@ -264,7 +316,7 @@ void display_seconds(struct tm *tick_time) {
   }
 }
 
-void display_item(ImageItem * item, uint32_t resource_id) {
+void display_item(ImageItem * item, uint32_t resource_id, Layer *parent) {
   if (item->loaded) {
     layer_remove_from_parent(bitmap_layer_get_layer(item->image_layer));
     gbitmap_destroy(item->bitmap);
@@ -276,19 +328,25 @@ void display_item(ImageItem * item, uint32_t resource_id) {
   bitmap_layer_set_bitmap(item->image_layer, item->bitmap);
   Layer * layer = bitmap_layer_get_layer(item->image_layer);
   layer_set_clips(layer, true);
-  layer_add_child(item->parent, layer);
+  layer_add_child(parent, layer);
 
   item->loaded = true;
 }
 
 void display_day(struct tm *tick_time) {
   int ix = tick_time->tm_wday;
-  display_item(&day_item, DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix]);
+  day_item.frame = GRect(
+    date_layer_width + MARGIN, 
+    DATE_CONTAINER_HEIGHT - DAY_IMAGE_HEIGHT - MARGIN, 
+    DAY_IMAGE_WIDTH, 
+    DAY_IMAGE_HEIGHT
+  );
+  display_item(&day_item, DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix], date_container_layer);
 }
 
 void display_slash() {
   display_item(&slash_item, 
-    inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH);
+    inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH, date_layer);
 }
 
 // Time
@@ -334,61 +392,32 @@ GRect frame_for_time_slot(Slot *time_slot) {
 
 
 // Date
+void display_date_value(int value, int part_number) {
+  value = value % 100; // Maximum of two digits per row.
 
-void display_left_date_value(int value) {
   for (int column_number = 1; column_number >= 0; column_number--) {
 
-    Slot *date_slot = &date_slots[column_number];
+    DateSlot *date_slot = &date_slots[column_number + part_number*2];
 
-    if (column_number == 0 && value == 0) {  // ignore the leading 0 for months
-      unload_digit_image_from_slot(date_slot);
-      return;
+    if (column_number == 0 && value == 0) {  // ignore the leading 0
+      unload_digit_image_from_slot(&date_slot->slot);
+    } else {
+      int ix = value % 10;
+      update_date_slot(date_slot, inverted ? ix + 10 : ix);
     }
-    
-    int ix = value % 10;
-    update_date_slot(date_slot, inverted ? ix + 10 : ix);
 
     value = value / 10;
   }
 }
 
-void display_right_date_value(int value) {
-  // left justify and remove leading 0
-  if (value > 9) {
-    // 2 digits required
-    for (int column_number = 3; column_number >= 2; column_number--) {
-      Slot *date_slot = &date_slots[column_number];
-      int ix = value % 10;
-      update_date_slot(date_slot, inverted ? ix + 10 : ix);
-      value = value / 10;
-    }
-  } else {
-    // only 1 digit
-    update_date_slot(&date_slots[2], inverted ? value + 10 : value);
-    unload_digit_image_from_slot(&date_slots[3]);
-  }
-}
-
-void display_date_value(int value, int part_number) {
-  value = value % 100; // Maximum of two digits per row.
-  if (part_number == 0) display_left_date_value(value);
-  else display_right_date_value(value);
-
-}
-
-void update_date_slot(Slot *date_slot, int digit_value) {
-  if (date_slot->state == digit_value) {
+void update_date_slot(DateSlot *date_slot, int digit_value) {
+  if (date_slot->slot.state == digit_value) {
     return;
   }
 
-  int x = date_slot->number * DATE_IMAGE_WIDTH;
-  if (date_slot->number >= 2) {
-    x += DATE_PART_SPACE; // space for the slash
-  }
-  GRect frame =  GRect(x, 0, DATE_IMAGE_WIDTH, DATE_IMAGE_HEIGHT);
-
-  unload_digit_image_from_slot(date_slot);
-  load_digit_image_into_slot(date_slot, digit_value, date_layer, frame, DATE_IMAGE_RESOURCE_IDS);
+  unload_digit_image_from_slot(&date_slot->slot);
+  load_digit_image_into_slot(&date_slot->slot, digit_value, date_layer, 
+    date_slot->frame, DATE_IMAGE_RESOURCE_IDS);
 }
 
 // Seconds
@@ -432,7 +461,6 @@ int main() {
   deinit();
 }
 
-
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   if (needToReload) return; // already still processing a previous tick
 
@@ -443,7 +471,7 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
   if (inverted && failed_count == 0)
     reset_fail_mode();
-  else if (!inverted && failed_count >= 5) // only go to fail mode if we fail for 5 seconds.
+  else if (!inverted && failed_count >= 3) // only go to fail mode if we fail for a few seconds.
                                           // maybe there was just a blip in the BT connection
     fail_mode();
 
@@ -452,11 +480,12 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   }
 
   if ((units_changed & DAY_UNIT) == DAY_UNIT || needToReload) {
+    create_date_layer(tick_time);
     display_day(tick_time);
     display_date(tick_time);
+    display_slash();
   }
 
-  if (needToReload) display_slash();
 
   display_seconds(tick_time);
 
@@ -479,11 +508,12 @@ void init() {
 
   // Date slots
   for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) {
-    Slot *date_slot = &date_slots[i];
-    date_slot->number = i;
-    date_slot->state  = EMPTY_SLOT;
-    date_slot->image_layer = NULL;
-    date_slot->bitmap  = NULL;
+    DateSlot *date_slot = &date_slots[i];
+    date_slot->slot.number = i;
+    date_slot->slot.state  = EMPTY_SLOT;
+    date_slot->slot.image_layer = NULL;
+    date_slot->slot.bitmap  = NULL;
+    date_slot->frame = GRectZero;
   }
 
   // Second slots
@@ -504,42 +534,28 @@ void init() {
   layer_add_child(root_layer, time_layer);
 
   // Date container
-  int date_container_height = SCREEN_HEIGHT - SCREEN_WIDTH;
-
-  date_container_layer = layer_create(GRect(0, SCREEN_WIDTH, SCREEN_WIDTH, date_container_height));
+  date_container_layer = layer_create(GRect(0, SCREEN_WIDTH, SCREEN_WIDTH, DATE_CONTAINER_HEIGHT));
   layer_set_clips(date_container_layer, true);
   layer_add_child(root_layer, date_container_layer);
 
-  // Date
-  GRect date_layer_frame = GRectZero;
-  date_layer_frame.size.w   = DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH + DATE_PART_SPACE + DATE_IMAGE_WIDTH + DATE_IMAGE_WIDTH;
-  date_layer_frame.size.h   = DATE_IMAGE_HEIGHT;
-  date_layer_frame.origin.x = MARGIN + DATE_IMAGE_WIDTH; //(SCREEN_WIDTH - date_layer_frame.size.w) / 2;
-  date_layer_frame.origin.y = date_container_height - DATE_IMAGE_HEIGHT - MARGIN;
-
-  date_layer = layer_create(date_layer_frame);
-  layer_set_clips(date_layer, true);
-  layer_add_child(date_container_layer, date_layer);
+  struct tm *tick_time;
+  time_t current_time = time(NULL);
+  tick_time = localtime(&current_time);
 
   // Slash
-  slash_item.frame = GRect(DATE_IMAGE_WIDTH * 2, 0, DATE_PART_SPACE, DATE_IMAGE_HEIGHT);
   slash_item.loaded = false;
-  slash_item.parent = date_layer;
 
   // Day slot
-  day_item.frame = GRect(
-    MARGIN, 
-    date_container_height - DAY_IMAGE_HEIGHT - MARGIN, 
-    DAY_IMAGE_WIDTH, 
-    DAY_IMAGE_HEIGHT
-  );
   day_item.loaded = false;
-  day_item.parent = date_container_layer;
+
+  // Date
+  date_layer = NULL;
+  create_date_layer(tick_time);
 
   // Seconds
   GRect seconds_layer_frame = GRect(
     SCREEN_WIDTH - SECOND_IMAGE_WIDTH - MARGIN - SECOND_IMAGE_WIDTH - MARGIN, 
-    date_container_height - SECOND_IMAGE_HEIGHT - MARGIN, 
+    DATE_CONTAINER_HEIGHT - SECOND_IMAGE_HEIGHT - MARGIN, 
     SECOND_IMAGE_WIDTH + MARGIN + SECOND_IMAGE_WIDTH, 
     SECOND_IMAGE_HEIGHT
   );
@@ -551,9 +567,6 @@ void init() {
   // Display
   inverted = !bluetooth_connection_service_peek();
   window_set_background_color(window, inverted ? GColorWhite : GColorBlack);
-  struct tm *tick_time;
-  time_t current_time = time(NULL);
-  tick_time = localtime(&current_time);
 
   display_time(tick_time);
   display_day(tick_time);
@@ -569,7 +582,7 @@ void deinit() {
     unload_digit_image_from_slot(&time_slots[i]);
   }
   for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) {
-    unload_digit_image_from_slot(&date_slots[i]);
+    unload_digit_image_from_slot(&date_slots[i].slot);
   }
   for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) {
     unload_digit_image_from_slot(&second_slots[i]);
@@ -581,5 +594,8 @@ void deinit() {
 
   if (slash_item.loaded) {
     unload_slash_item();
-  } 
+  }
+  layer_destroy(date_container_layer);
+  layer_destroy(time_layer);
+  window_destroy(window);
 }
