@@ -296,6 +296,16 @@
         "type": "png",
         "name": "IMAGE_SLASH_INV",
         "file": "images/slash_inv.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_LOWBATT",
+        "file": "images/lowbatt.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_LOWBATT_INV",
+        "file": "images/lowbatt_inv.png"
       }
     ]
   }
