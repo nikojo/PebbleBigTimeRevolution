@@ -27,6 +27,9 @@
 #define DAY_IMAGE_WIDTH     20
 #define DAY_IMAGE_HEIGHT    20
 
+#define LOWBATT_IMAGE_WIDTH 13
+#define LOWBATT_IMAGE_HEIGHT 6
+
 #define MARGIN              1
 #define MARGIN_TIME_X       13
 #define MARGIN_DATE_X       2
@@ -131,13 +134,15 @@ typedef struct ImageItem {
 } ImageItem;
 ImageItem day_item;
 ImageItem slash_item;
+ImageItem lowbatt_item;
 
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids);
 void unload_digit_image_from_slot(Slot *slot);
 void unload_image_item(ImageItem * item);
-void unload_day_item();
-void unload_slash_item();
+void unload_day();
+void unload_slash();
+void unload_lowbatt();
 void create_date_layer(struct tm *tick_time);
 
 // Display
@@ -146,6 +151,7 @@ void display_date(struct tm *tick_time);
 void display_seconds(struct tm *tick_time);
 void display_day(struct tm *tick_time);
 void display_slash();
+void display_lowbatt();
 
 // Time
 void display_time_value(int value, int row_number);
@@ -164,6 +170,7 @@ void fail_mode();
 void reset_fail_mode();
 
 // handlers
+static void handle_battery(BatteryChargeState charge_state);
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
 // startup
@@ -214,12 +221,16 @@ void unload_image_item(ImageItem *item) {
 }
 
 
-void unload_day_item() {
+void unload_day() {
   unload_image_item(&day_item);
 }
 
-void unload_slash_item() {
+void unload_slash() {
   unload_image_item(&slash_item);
+}
+
+void unload_lowbatt() {
+  unload_image_item(&lowbatt_item);
 }
 
 void unload_all_images() {
@@ -228,8 +239,9 @@ void unload_all_images() {
   for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) unload_digit_image_from_slot(&date_slots[i].slot);
   for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) unload_digit_image_from_slot(&second_slots[i]);
 
-  unload_day_item();
-  unload_slash_item();
+  unload_day();
+  unload_slash();
+  unload_lowbatt();
 }
 
 void create_date_frames(int left_digit_count, int right_digit_count) {
@@ -245,7 +257,7 @@ void create_date_layer(struct tm *tick_time) {
   for (int i = 0; i < NUMBER_OF_DATE_SLOTS; ++i) {
     unload_digit_image_from_slot(&date_slots[i].slot);
   }
-  unload_slash_item();
+  unload_slash();
 
   if (date_layer != NULL) {
     layer_remove_from_parent(date_layer);
@@ -348,6 +360,14 @@ void display_day(struct tm *tick_time) {
 void display_slash() {
   display_item(&slash_item, 
     inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH, date_layer);
+}
+
+void display_lowbatt() {
+  if (!lowbatt_item.loaded) {
+    display_item(&lowbatt_item, 
+      inverted ? RESOURCE_ID_IMAGE_LOWBATT_INV : RESOURCE_ID_IMAGE_LOWBATT, 
+      time_layer); // should really be the root layer, but time layer will do
+  }
 }
 
 // Time
@@ -462,6 +482,14 @@ int main() {
   deinit();
 }
 
+static void handle_battery(BatteryChargeState charge_state) {
+
+  if (charge_state.is_charging || charge_state.charge_percent > 17)
+    unload_lowbatt();
+  else
+    display_lowbatt();
+}
+
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   if (needToReload) return; // already still processing a previous tick
 
@@ -546,6 +574,11 @@ void init() {
   // Slash
   slash_item.loaded = false;
 
+  // LowBatt
+  lowbatt_item.loaded = false;
+  lowbatt_item.frame = GRect(SCREEN_WIDTH - LOWBATT_IMAGE_WIDTH, 2*MARGIN, 
+                             LOWBATT_IMAGE_WIDTH, LOWBATT_IMAGE_HEIGHT);
+
   // Day slot
   day_item.loaded = false;
 
@@ -576,6 +609,8 @@ void init() {
   display_seconds(tick_time);
 
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+  battery_state_service_subscribe(&handle_battery);
+  handle_battery(battery_state_service_peek());
 }
 
 void deinit() {
@@ -589,13 +624,9 @@ void deinit() {
     unload_digit_image_from_slot(&second_slots[i]);
   }
 
-  if (day_item.loaded) {
-    unload_day_item();
-  }
-
-  if (slash_item.loaded) {
-    unload_slash_item();
-  }
+  unload_day();
+  unload_slash();
+  unload_lowbatt();
   layer_destroy(date_container_layer);
   layer_destroy(time_layer);
   window_destroy(window);
