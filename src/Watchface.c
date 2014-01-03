@@ -33,6 +33,7 @@
 #define TIME_SLOT_SPACE     2
 #define DATE_PART_SPACE     9
 #define DATE_CONTAINER_HEIGHT SCREEN_HEIGHT - SCREEN_WIDTH
+#define DATE_DAY_GAP        2
 
 
 
@@ -336,7 +337,7 @@ void display_item(ImageItem * item, uint32_t resource_id, Layer *parent) {
 void display_day(struct tm *tick_time) {
   int ix = tick_time->tm_wday;
   day_item.frame = GRect(
-    date_layer_width + MARGIN, 
+    date_layer_width + MARGIN + DATE_DAY_GAP, 
     DATE_CONTAINER_HEIGHT - DAY_IMAGE_HEIGHT - MARGIN, 
     DAY_IMAGE_WIDTH, 
     DAY_IMAGE_HEIGHT
