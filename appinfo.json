@@ -1,10 +1,10 @@
 {
   "uuid": "9ff6189a-f9ad-4f7c-8a36-c0d22e9f7f72",
-  "shortName": "Big Time Rev Prox Alert Eng",
-  "longName": "Big Time Rev Prox Alert English",
+  "shortName": "Tomz Time En",
+  "longName": "Tomz Time English",
   "companyName": "Tom Fukushima",
   "versionCode": 2,
-  "versionLabel": "2.6.0",
+  "versionLabel": "2.6.1",
   "watchapp": {
     "watchface": true
   },
