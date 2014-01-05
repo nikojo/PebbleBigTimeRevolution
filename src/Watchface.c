@@ -482,7 +482,7 @@ int main() {
 
 static void handle_battery(BatteryChargeState charge_state) {
 
-  if (charge_state.charge_percent == 100)
+  if (!charge_state.is_charging && charge_state.is_plugged)
     display_batt(inverted ? RESOURCE_ID_IMAGE_FULLBATT_INV : RESOURCE_ID_IMAGE_FULLBATT);
   else if (charge_state.is_charging)
     display_batt(inverted ? RESOURCE_ID_IMAGE_CHARGING_INV : RESOURCE_ID_IMAGE_CHARGING);
