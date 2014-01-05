@@ -27,8 +27,8 @@
 #define DAY_IMAGE_WIDTH     20
 #define DAY_IMAGE_HEIGHT    20
 
-#define LOWBATT_IMAGE_WIDTH 13
-#define LOWBATT_IMAGE_HEIGHT 6
+#define BATT_IMAGE_WIDTH 13
+#define BATT_IMAGE_HEIGHT 6
 
 #define MARGIN              1
 #define MARGIN_TIME_X       13
@@ -134,7 +134,7 @@ typedef struct ImageItem {
 } ImageItem;
 ImageItem day_item;
 ImageItem slash_item;
-ImageItem lowbatt_item;
+ImageItem batt_item;
 
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids);
@@ -142,7 +142,7 @@ void unload_digit_image_from_slot(Slot *slot);
 void unload_image_item(ImageItem * item);
 void unload_day();
 void unload_slash();
-void unload_lowbatt();
+void unload_batt();
 void create_date_layer(struct tm *tick_time);
 
 // Display
@@ -151,7 +151,7 @@ void display_date(struct tm *tick_time);
 void display_seconds(struct tm *tick_time);
 void display_day(struct tm *tick_time);
 void display_slash();
-void display_lowbatt();
+void display_batt(int icon);
 
 // Time
 void display_time_value(int value, int row_number);
@@ -229,8 +229,8 @@ void unload_slash() {
   unload_image_item(&slash_item);
 }
 
-void unload_lowbatt() {
-  unload_image_item(&lowbatt_item);
+void unload_batt() {
+  unload_image_item(&batt_item);
 }
 
 void unload_all_images() {
@@ -241,7 +241,7 @@ void unload_all_images() {
 
   unload_day();
   unload_slash();
-  unload_lowbatt();
+  unload_batt();
 }
 
 void create_date_frames(int left_digit_count, int right_digit_count) {
@@ -362,12 +362,10 @@ void display_slash() {
     inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH, date_layer);
 }
 
-void display_lowbatt() {
-  if (!lowbatt_item.loaded) {
-    display_item(&lowbatt_item, 
-      inverted ? RESOURCE_ID_IMAGE_LOWBATT_INV : RESOURCE_ID_IMAGE_LOWBATT, 
+void display_batt(int icon) {
+  unload_batt();
+  display_item(&batt_item, icon, 
       time_layer); // should really be the root layer, but time layer will do
-  }
 }
 
 // Time
@@ -484,10 +482,14 @@ int main() {
 
 static void handle_battery(BatteryChargeState charge_state) {
 
-  if (charge_state.is_charging || charge_state.charge_percent > 17)
-    unload_lowbatt();
+  if (charge_state.charge_percent == 100)
+    display_batt(inverted ? RESOURCE_ID_IMAGE_FULLBATT_INV : RESOURCE_ID_IMAGE_FULLBATT);
+  else if (charge_state.is_charging)
+    display_batt(inverted ? RESOURCE_ID_IMAGE_CHARGING_INV : RESOURCE_ID_IMAGE_CHARGING);
+  else if (charge_state.charge_percent <= 17)
+    display_batt(inverted ? RESOURCE_ID_IMAGE_LOWBATT_INV : RESOURCE_ID_IMAGE_LOWBATT);
   else
-    display_lowbatt();
+    unload_batt();
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -574,10 +576,10 @@ void init() {
   // Slash
   slash_item.loaded = false;
 
-  // LowBatt
-  lowbatt_item.loaded = false;
-  lowbatt_item.frame = GRect(SCREEN_WIDTH - LOWBATT_IMAGE_WIDTH, 2*MARGIN, 
-                             LOWBATT_IMAGE_WIDTH, LOWBATT_IMAGE_HEIGHT);
+  // Battery icon
+  batt_item.loaded = false;
+  batt_item.frame = GRect(SCREEN_WIDTH - BATT_IMAGE_WIDTH, 2*MARGIN, 
+                             BATT_IMAGE_WIDTH, BATT_IMAGE_HEIGHT);
 
   // Day slot
   day_item.loaded = false;
@@ -626,7 +628,7 @@ void deinit() {
 
   unload_day();
   unload_slash();
-  unload_lowbatt();
+  unload_batt();
   layer_destroy(date_container_layer);
   layer_destroy(time_layer);
   window_destroy(window);

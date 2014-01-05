@@ -306,6 +306,26 @@
         "type": "png",
         "name": "IMAGE_LOWBATT_INV",
         "file": "images/lowbatt_inv.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_CHARGING",
+        "file": "images/charging.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_CHARGING_INV",
+        "file": "images/charging_inv.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_FULLBATT",
+        "file": "images/fullbatt.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_FULLBATT_INV",
+        "file": "images/fullbatt_inv.png"
       }
     ]
   }
