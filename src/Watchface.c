@@ -486,7 +486,7 @@ static void handle_battery(BatteryChargeState charge_state) {
     display_batt(inverted ? RESOURCE_ID_IMAGE_FULLBATT_INV : RESOURCE_ID_IMAGE_FULLBATT);
   else if (charge_state.is_charging)
     display_batt(inverted ? RESOURCE_ID_IMAGE_CHARGING_INV : RESOURCE_ID_IMAGE_CHARGING);
-  else if (charge_state.charge_percent <= 17)
+  else if (charge_state.charge_percent <= 20)
     display_batt(inverted ? RESOURCE_ID_IMAGE_LOWBATT_INV : RESOURCE_ID_IMAGE_LOWBATT);
   else
     unload_batt();
