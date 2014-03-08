@@ -1,10 +1,10 @@
 {
   "uuid": "b1230861-d4eb-4f6e-a2d0-eaa2a07797df",
-  "shortName": "Tomz Time Jp",
-  "longName": "Tomz Time Japanese",
+  "shortName": "Tomz Big Jp",
+  "longName": "Tomz Big Time Japanese",
   "companyName": "Tom Fukushima",
   "versionCode": 2,
-  "versionLabel": "2.6.3",
+  "versionLabel": "2.6.4",
   "watchapp": {
     "watchface": true
   },
@@ -154,148 +154,8 @@
       },
       {
         "type": "png",
-        "name": "IMAGE_TIME_10",
-        "file": "images/time_10.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_11",
-        "file": "images/time_11.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_12",
-        "file": "images/time_12.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_13",
-        "file": "images/time_13.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_14",
-        "file": "images/time_14.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_15",
-        "file": "images/time_15.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_16",
-        "file": "images/time_16.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_17",
-        "file": "images/time_17.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_18",
-        "file": "images/time_18.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_TIME_19",
-        "file": "images/time_19.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_10",
-        "file": "images/date_10.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_11",
-        "file": "images/date_11.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_12",
-        "file": "images/date_12.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_13",
-        "file": "images/date_13.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_14",
-        "file": "images/date_14.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_15",
-        "file": "images/date_15.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_16",
-        "file": "images/date_16.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_17",
-        "file": "images/date_17.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_18",
-        "file": "images/date_18.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DATE_19",
-        "file": "images/date_19.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_10",
-        "file": "images/day_10.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_11",
-        "file": "images/day_11.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_12",
-        "file": "images/day_12.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_13",
-        "file": "images/day_13.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_14",
-        "file": "images/day_14.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_15",
-        "file": "images/day_15.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_DAY_16",
-        "file": "images/day_16.png"
-      },
-      {
-        "type": "png",
         "name": "IMAGE_SLASH",
         "file": "images/slash.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_SLASH_INV",
-        "file": "images/slash_inv.png"
       },
       {
         "type": "png",
@@ -304,28 +164,13 @@
       },
       {
         "type": "png",
-        "name": "IMAGE_LOWBATT_INV",
-        "file": "images/lowbatt_inv.png"
-      },
-      {
-        "type": "png",
         "name": "IMAGE_CHARGING",
         "file": "images/charging.png"
       },
       {
         "type": "png",
-        "name": "IMAGE_CHARGING_INV",
-        "file": "images/charging_inv.png"
-      },
-      {
-        "type": "png",
         "name": "IMAGE_FULLBATT",
         "file": "images/fullbatt.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_FULLBATT_INV",
-        "file": "images/fullbatt_inv.png"
       }
     ]
   }

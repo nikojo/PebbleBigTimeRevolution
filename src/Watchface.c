@@ -8,6 +8,8 @@
 
 #include <pebble.h>
 
+#define GRECT_FULL_WINDOW GRect(0,0,144,168)
+
 // Settings
 #define USE_AMERICAN_DATE_FORMAT      true
 
@@ -41,60 +43,48 @@
 
 
 // Images
-#define NUMBER_OF_TIME_IMAGES 20
+#define NUMBER_OF_TIME_IMAGES 10
 const int TIME_IMAGE_RESOURCE_IDS[NUMBER_OF_TIME_IMAGES] = {
   RESOURCE_ID_IMAGE_TIME_0, 
   RESOURCE_ID_IMAGE_TIME_1, RESOURCE_ID_IMAGE_TIME_2, RESOURCE_ID_IMAGE_TIME_3, 
   RESOURCE_ID_IMAGE_TIME_4, RESOURCE_ID_IMAGE_TIME_5, RESOURCE_ID_IMAGE_TIME_6, 
-  RESOURCE_ID_IMAGE_TIME_7, RESOURCE_ID_IMAGE_TIME_8, RESOURCE_ID_IMAGE_TIME_9,
-  RESOURCE_ID_IMAGE_TIME_10, 
-  RESOURCE_ID_IMAGE_TIME_11, RESOURCE_ID_IMAGE_TIME_12, RESOURCE_ID_IMAGE_TIME_13, 
-  RESOURCE_ID_IMAGE_TIME_14, RESOURCE_ID_IMAGE_TIME_15, RESOURCE_ID_IMAGE_TIME_16, 
-  RESOURCE_ID_IMAGE_TIME_17, RESOURCE_ID_IMAGE_TIME_18, RESOURCE_ID_IMAGE_TIME_19
+  RESOURCE_ID_IMAGE_TIME_7, RESOURCE_ID_IMAGE_TIME_8, RESOURCE_ID_IMAGE_TIME_9
 };
 
-#define NUMBER_OF_DATE_IMAGES 20
+#define NUMBER_OF_DATE_IMAGES 10
 const int DATE_IMAGE_RESOURCE_IDS[NUMBER_OF_DATE_IMAGES] = {
   RESOURCE_ID_IMAGE_DATE_0, 
   RESOURCE_ID_IMAGE_DATE_1, RESOURCE_ID_IMAGE_DATE_2, RESOURCE_ID_IMAGE_DATE_3, 
   RESOURCE_ID_IMAGE_DATE_4, RESOURCE_ID_IMAGE_DATE_5, RESOURCE_ID_IMAGE_DATE_6, 
-  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9,
-  RESOURCE_ID_IMAGE_DATE_10, 
-  RESOURCE_ID_IMAGE_DATE_11, RESOURCE_ID_IMAGE_DATE_12, RESOURCE_ID_IMAGE_DATE_13, 
-  RESOURCE_ID_IMAGE_DATE_14, RESOURCE_ID_IMAGE_DATE_15, RESOURCE_ID_IMAGE_DATE_16, 
-  RESOURCE_ID_IMAGE_DATE_17, RESOURCE_ID_IMAGE_DATE_18, RESOURCE_ID_IMAGE_DATE_19
+  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9
 };
 
-#define NUMBER_OF_SECOND_IMAGES 20
+#define NUMBER_OF_SECOND_IMAGES 10
 const int SECOND_IMAGE_RESOURCE_IDS[NUMBER_OF_SECOND_IMAGES] = {
   RESOURCE_ID_IMAGE_DATE_0, 
   RESOURCE_ID_IMAGE_DATE_1, RESOURCE_ID_IMAGE_DATE_2, RESOURCE_ID_IMAGE_DATE_3, 
   RESOURCE_ID_IMAGE_DATE_4, RESOURCE_ID_IMAGE_DATE_5, RESOURCE_ID_IMAGE_DATE_6, 
-  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9,
-  RESOURCE_ID_IMAGE_DATE_10, 
-  RESOURCE_ID_IMAGE_DATE_11, RESOURCE_ID_IMAGE_DATE_12, RESOURCE_ID_IMAGE_DATE_13, 
-  RESOURCE_ID_IMAGE_DATE_14, RESOURCE_ID_IMAGE_DATE_15, RESOURCE_ID_IMAGE_DATE_16, 
-  RESOURCE_ID_IMAGE_DATE_17, RESOURCE_ID_IMAGE_DATE_18, RESOURCE_ID_IMAGE_DATE_19
+  RESOURCE_ID_IMAGE_DATE_7, RESOURCE_ID_IMAGE_DATE_8, RESOURCE_ID_IMAGE_DATE_9
 };
 
-#define NUMBER_OF_DAY_IMAGES 14
+#define NUMBER_OF_DAY_IMAGES 7
 const int DAY_IMAGE_RESOURCE_IDS[NUMBER_OF_DAY_IMAGES] = {
   RESOURCE_ID_IMAGE_DAY_0, RESOURCE_ID_IMAGE_DAY_1, RESOURCE_ID_IMAGE_DAY_2, 
   RESOURCE_ID_IMAGE_DAY_3, RESOURCE_ID_IMAGE_DAY_4, RESOURCE_ID_IMAGE_DAY_5, 
-  RESOURCE_ID_IMAGE_DAY_6,
-  RESOURCE_ID_IMAGE_DAY_10, RESOURCE_ID_IMAGE_DAY_11, RESOURCE_ID_IMAGE_DAY_12, 
-  RESOURCE_ID_IMAGE_DAY_13, RESOURCE_ID_IMAGE_DAY_14, RESOURCE_ID_IMAGE_DAY_15, 
-  RESOURCE_ID_IMAGE_DAY_16
+  RESOURCE_ID_IMAGE_DAY_6
 };
 
 
 // Main
+Layer *root_layer;
 Window *window;
 Layer *date_container_layer;
 bool inverted = false;
 bool needToReload = false; // true if all slots were unloaded
 int failed_count = 0; // number of times in a row that the bluetooth check has failed
 
+static InverterLayer *full_inverse_layer;
+static Layer *inverter_layer;
 
 #define EMPTY_SLOT -1
 
@@ -323,7 +313,7 @@ void display_seconds(struct tm *tick_time) {
     Slot *second_slot = &second_slots[second_slot_number];
 
     int ix = seconds % 10;
-    update_second_slot(second_slot, inverted ? ix + 10 : ix);
+    update_second_slot(second_slot, ix);
     
     seconds = seconds / 10;
   }
@@ -354,12 +344,11 @@ void display_day(struct tm *tick_time) {
     DAY_IMAGE_WIDTH, 
     DAY_IMAGE_HEIGHT
   );
-  display_item(&day_item, DAY_IMAGE_RESOURCE_IDS[inverted ? ix + 7 : ix], date_container_layer);
+  display_item(&day_item, DAY_IMAGE_RESOURCE_IDS[ix], date_container_layer);
 }
 
 void display_slash() {
-  display_item(&slash_item, 
-    inverted ? RESOURCE_ID_IMAGE_SLASH_INV : RESOURCE_ID_IMAGE_SLASH, date_layer);
+  display_item(&slash_item, RESOURCE_ID_IMAGE_SLASH, date_layer);
 }
 
 void display_batt(int icon) {
@@ -384,7 +373,7 @@ void display_time_value(int value, int row_number) {
     }
 	
     int ix = value % 10;       
-    update_time_slot(time_slot, inverted ? ix + 10 : ix);
+    update_time_slot(time_slot, ix);
 
     value = value / 10;
   }
@@ -422,7 +411,7 @@ void display_date_value(int value, int part_number) {
       unload_digit_image_from_slot(&date_slot->slot);
     } else {
       int ix = value % 10;
-      update_date_slot(date_slot, inverted ? ix + 10 : ix);
+      update_date_slot(date_slot, ix);
     }
 
     value = value / 10;
@@ -459,17 +448,15 @@ void update_second_slot(Slot *second_slot, int digit_value) {
 void fail_mode() {
   if (!inverted) {
     inverted = true;
-    unload_all_images(); // when background changes all images need to be refreshed
     vibes_long_pulse();
-    window_set_background_color(window, GColorWhite);
+    layer_add_child(root_layer, inverter_layer);
   }
 }
 
 void reset_fail_mode() {
   if (inverted) {
     inverted = false;
-    unload_all_images(); // when background changes all images need to be refreshed
-    window_set_background_color(window, GColorBlack);
+    layer_remove_from_parent(inverter_layer);
   }
 }
 
@@ -483,11 +470,11 @@ int main() {
 static void handle_battery(BatteryChargeState charge_state) {
 
   if (!charge_state.is_charging && charge_state.is_plugged)
-    display_batt(inverted ? RESOURCE_ID_IMAGE_FULLBATT_INV : RESOURCE_ID_IMAGE_FULLBATT);
+    display_batt(RESOURCE_ID_IMAGE_FULLBATT);
   else if (charge_state.is_charging)
-    display_batt(inverted ? RESOURCE_ID_IMAGE_CHARGING_INV : RESOURCE_ID_IMAGE_CHARGING);
+    display_batt(RESOURCE_ID_IMAGE_CHARGING);
   else if (charge_state.charge_percent <= 20)
-    display_batt(inverted ? RESOURCE_ID_IMAGE_LOWBATT_INV : RESOURCE_ID_IMAGE_LOWBATT);
+    display_batt(RESOURCE_ID_IMAGE_LOWBATT);
   else
     unload_batt();
 }
@@ -557,7 +544,7 @@ void init() {
   }
 
   // Root layer
-  Layer *root_layer = window_get_root_layer(window);
+  root_layer = window_get_root_layer(window);
 
   // Time
   time_layer = layer_create(GRect(0, 0, SCREEN_WIDTH, SCREEN_WIDTH));
@@ -599,10 +586,12 @@ void init() {
   layer_set_clips(seconds_layer, true);
   layer_add_child(date_container_layer, seconds_layer);
 
+  full_inverse_layer = inverter_layer_create(GRECT_FULL_WINDOW);
+  inverter_layer = inverter_layer_get_layer(full_inverse_layer);
 
   // Display
   inverted = !bluetooth_connection_service_peek();
-  window_set_background_color(window, inverted ? GColorWhite : GColorBlack);
+  window_set_background_color(window, GColorBlack);
 
   display_time(tick_time);
   display_day(tick_time);
@@ -631,5 +620,6 @@ void deinit() {
   unload_batt();
   layer_destroy(date_container_layer);
   layer_destroy(time_layer);
+  inverter_layer_destroy(full_inverse_layer);
   window_destroy(window);
 }
