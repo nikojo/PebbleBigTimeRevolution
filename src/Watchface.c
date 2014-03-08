@@ -574,7 +574,7 @@ void init() {
   icon_battery = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BATTERY);
   icon_battery_charge = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHARGING);
 
-  battery_layer = layer_create(GRect(SCREEN_WIDTH-BATTERY_IMAGE_WIDTH,4,BATTERY_IMAGE_WIDTH,BATTERY_IMAGE_HEIGHT));
+  battery_layer = layer_create(GRect(SCREEN_WIDTH-BATTERY_IMAGE_WIDTH-MARGIN,4,BATTERY_IMAGE_WIDTH,BATTERY_IMAGE_HEIGHT));
   BatteryChargeState initial = battery_state_service_peek();
   battery_level = initial.charge_percent;
   battery_plugged = initial.is_plugged;
