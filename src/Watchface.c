@@ -29,9 +29,6 @@
 #define DAY_IMAGE_WIDTH     20
 #define DAY_IMAGE_HEIGHT    20
 
-#define BATT_IMAGE_WIDTH 13
-#define BATT_IMAGE_HEIGHT 6
-
 #define MARGIN              1
 #define MARGIN_TIME_X       13
 #define MARGIN_DATE_X       2
@@ -83,6 +80,13 @@ bool inverted = false;
 bool needToReload = false; // true if all slots were unloaded
 int failed_count = 0; // number of times in a row that the bluetooth check has failed
 
+static uint8_t battery_level;
+static bool battery_plugged;
+static GBitmap *icon_battery;
+static GBitmap *icon_battery_charge;
+static Layer *battery_layer;
+
+
 static InverterLayer *full_inverse_layer;
 static Layer *inverter_layer;
 
@@ -124,7 +128,6 @@ typedef struct ImageItem {
 } ImageItem;
 ImageItem day_item;
 ImageItem slash_item;
-ImageItem batt_item;
 
 // General
 BitmapLayer *load_digit_image_into_slot(Slot *slot, int digit_value, Layer *parent_layer, GRect frame, const int *digit_resource_ids);
@@ -132,7 +135,6 @@ void unload_digit_image_from_slot(Slot *slot);
 void unload_image_item(ImageItem * item);
 void unload_day();
 void unload_slash();
-void unload_batt();
 void create_date_layer(struct tm *tick_time);
 
 // Display
@@ -141,7 +143,6 @@ void display_date(struct tm *tick_time);
 void display_seconds(struct tm *tick_time);
 void display_day(struct tm *tick_time);
 void display_slash();
-void display_batt(int icon);
 
 // Time
 void display_time_value(int value, int row_number);
@@ -219,10 +220,6 @@ void unload_slash() {
   unload_image_item(&slash_item);
 }
 
-void unload_batt() {
-  unload_image_item(&batt_item);
-}
-
 void unload_all_images() {
   needToReload = true;
   for (int i = 0; i < NUMBER_OF_TIME_SLOTS; i++) unload_digit_image_from_slot(&time_slots[i]);
@@ -231,7 +228,6 @@ void unload_all_images() {
 
   unload_day();
   unload_slash();
-  unload_batt();
 }
 
 void create_date_frames(int left_digit_count, int right_digit_count) {
@@ -351,12 +347,6 @@ void display_slash() {
   display_item(&slash_item, RESOURCE_ID_IMAGE_SLASH, date_layer);
 }
 
-void display_batt(int icon) {
-  unload_batt();
-  display_item(&batt_item, icon, 
-      time_layer); // should really be the root layer, but time layer will do
-}
-
 // Time
 void display_time_value(int value, int row_number) {
   value = value % 100; // Maximum of two digits per row.
@@ -467,16 +457,11 @@ int main() {
   deinit();
 }
 
-static void handle_battery(BatteryChargeState charge_state) {
+static void handle_battery(BatteryChargeState charge) {
 
-  if (!charge_state.is_charging && charge_state.is_plugged)
-    display_batt(RESOURCE_ID_IMAGE_FULLBATT);
-  else if (charge_state.is_charging)
-    display_batt(RESOURCE_ID_IMAGE_CHARGING);
-  else if (charge_state.charge_percent <= 20)
-    display_batt(RESOURCE_ID_IMAGE_LOWBATT);
-  else
-    unload_batt();
+  battery_level = charge.charge_percent;
+  battery_plugged = charge.is_plugged;
+  layer_mark_dirty(battery_layer);
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -509,6 +494,26 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
   needToReload = false;
 }
+
+/*
+ * Battery icon callback handler
+ */
+void battery_layer_update_callback(Layer *layer, GContext *ctx) {
+
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+
+  if (!battery_plugged) {
+    graphics_draw_bitmap_in_rect(ctx, icon_battery, GRect(0, 0, 8, 16));
+    graphics_context_set_stroke_color(ctx, GColorBlack);
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    int height = (uint8_t)((battery_level / 100.0) * 11.0);
+    graphics_fill_rect(ctx, GRect(2, 14 - height, 4, height), 0, GCornerNone);
+  } else {
+    graphics_draw_bitmap_in_rect(ctx, icon_battery_charge, GRect(0, 0, 8, 16));
+  }
+}
+
+
 
 void init() {
 
@@ -563,11 +568,6 @@ void init() {
   // Slash
   slash_item.loaded = false;
 
-  // Battery icon
-  batt_item.loaded = false;
-  batt_item.frame = GRect(SCREEN_WIDTH - BATT_IMAGE_WIDTH, 2*MARGIN, 
-                             BATT_IMAGE_WIDTH, BATT_IMAGE_HEIGHT);
-
   // Day slot
   day_item.loaded = false;
 
@@ -586,6 +586,18 @@ void init() {
   layer_set_clips(seconds_layer, true);
   layer_add_child(date_container_layer, seconds_layer);
 
+  // Status setup
+  icon_battery = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BATTERY);
+  icon_battery_charge = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHARGING);
+
+  battery_layer = layer_create(GRect(SCREEN_WIDTH-8,4,8,16));
+  BatteryChargeState initial = battery_state_service_peek();
+  battery_level = initial.charge_percent;
+  battery_plugged = initial.is_plugged;
+  layer_set_update_proc(battery_layer, &battery_layer_update_callback);
+  layer_add_child(root_layer, battery_layer);
+
+  // Inverter
   full_inverse_layer = inverter_layer_create(GRECT_FULL_WINDOW);
   inverter_layer = inverter_layer_get_layer(full_inverse_layer);
 
@@ -615,9 +627,12 @@ void deinit() {
     unload_digit_image_from_slot(&second_slots[i]);
   }
 
+  gbitmap_destroy(icon_battery);
+  gbitmap_destroy(icon_battery_charge);
+  layer_destroy(battery_layer);
+
   unload_day();
   unload_slash();
-  unload_batt();
   layer_destroy(date_container_layer);
   layer_destroy(time_layer);
   inverter_layer_destroy(full_inverse_layer);

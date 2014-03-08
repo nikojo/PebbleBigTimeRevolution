@@ -159,18 +159,13 @@
       },
       {
         "type": "png",
-        "name": "IMAGE_LOWBATT",
-        "file": "images/lowbatt.png"
+        "name": "IMAGE_BATTERY",
+        "file": "images/battery_icon.png"
       },
       {
         "type": "png",
         "name": "IMAGE_CHARGING",
-        "file": "images/charging.png"
-      },
-      {
-        "type": "png",
-        "name": "IMAGE_FULLBATT",
-        "file": "images/fullbatt.png"
+        "file": "images/battery_charge.png"
       }
     ]
   }
