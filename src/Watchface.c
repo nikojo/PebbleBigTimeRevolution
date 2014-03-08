@@ -37,6 +37,9 @@
 #define DATE_CONTAINER_HEIGHT SCREEN_HEIGHT - SCREEN_WIDTH
 #define DATE_DAY_GAP        2
 
+#define BATTERY_IMAGE_WIDTH 8
+#define BATTERY_IMAGE_HEIGHT 16
+
 
 
 // Images
@@ -76,9 +79,6 @@ const int DAY_IMAGE_RESOURCE_IDS[NUMBER_OF_DAY_IMAGES] = {
 Layer *root_layer;
 Window *window;
 Layer *date_container_layer;
-bool inverted = false;
-bool needToReload = false; // true if all slots were unloaded
-int failed_count = 0; // number of times in a row that the bluetooth check has failed
 
 static uint8_t battery_level;
 static bool battery_plugged;
@@ -86,6 +86,7 @@ static GBitmap *icon_battery;
 static GBitmap *icon_battery_charge;
 static Layer *battery_layer;
 
+static AppTimer *recheck_bluetooth_timer;
 
 static InverterLayer *full_inverse_layer;
 static Layer *inverter_layer;
@@ -218,16 +219,6 @@ void unload_day() {
 
 void unload_slash() {
   unload_image_item(&slash_item);
-}
-
-void unload_all_images() {
-  needToReload = true;
-  for (int i = 0; i < NUMBER_OF_TIME_SLOTS; i++) unload_digit_image_from_slot(&time_slots[i]);
-  for (int i = 0; i < NUMBER_OF_DATE_SLOTS; i++) unload_digit_image_from_slot(&date_slots[i].slot);
-  for (int i = 0; i < NUMBER_OF_SECOND_SLOTS; i++) unload_digit_image_from_slot(&second_slots[i]);
-
-  unload_day();
-  unload_slash();
 }
 
 void create_date_frames(int left_digit_count, int right_digit_count) {
@@ -436,18 +427,12 @@ void update_second_slot(Slot *second_slot, int digit_value) {
 }
 
 void fail_mode() {
-  if (!inverted) {
-    inverted = true;
-    vibes_long_pulse();
-    layer_add_child(root_layer, inverter_layer);
-  }
+  vibes_long_pulse();
+  layer_add_child(root_layer, inverter_layer);
 }
 
 void reset_fail_mode() {
-  if (inverted) {
-    inverted = false;
-    layer_remove_from_parent(inverter_layer);
-  }
+  layer_remove_from_parent(inverter_layer);
 }
 
 
@@ -465,24 +450,11 @@ static void handle_battery(BatteryChargeState charge) {
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-  if (needToReload) return; // already still processing a previous tick
-
-  if (bluetooth_connection_service_peek())
-      failed_count = 0;
-  else
-      failed_count++;
-
-  if (inverted && failed_count == 0)
-    reset_fail_mode();
-  else if (!inverted && failed_count >= 3) // only go to fail mode if we fail for a few seconds.
-                                          // maybe there was just a blip in the BT connection
-    fail_mode();
-
-  if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT || needToReload) {
+  if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
     display_time(tick_time);
   }
 
-  if ((units_changed & DAY_UNIT) == DAY_UNIT || needToReload) {
+  if ((units_changed & DAY_UNIT) == DAY_UNIT) {
     create_date_layer(tick_time);
     display_day(tick_time);
     display_date(tick_time);
@@ -491,8 +463,6 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 
   display_seconds(tick_time);
-
-  needToReload = false;
 }
 
 /*
@@ -503,16 +473,30 @@ void battery_layer_update_callback(Layer *layer, GContext *ctx) {
   graphics_context_set_compositing_mode(ctx, GCompOpAssign);
 
   if (!battery_plugged) {
-    graphics_draw_bitmap_in_rect(ctx, icon_battery, GRect(0, 0, 8, 16));
+    graphics_draw_bitmap_in_rect(ctx, icon_battery, GRect(0, 0, BATTERY_IMAGE_WIDTH, BATTERY_IMAGE_HEIGHT));
     graphics_context_set_stroke_color(ctx, GColorBlack);
     graphics_context_set_fill_color(ctx, GColorWhite);
     int height = (uint8_t)((battery_level / 100.0) * 11.0);
     graphics_fill_rect(ctx, GRect(2, 14 - height, 4, height), 0, GCornerNone);
   } else {
-    graphics_draw_bitmap_in_rect(ctx, icon_battery_charge, GRect(0, 0, 8, 16));
+    graphics_draw_bitmap_in_rect(ctx, icon_battery_charge, GRect(0, 0, BATTERY_IMAGE_WIDTH, BATTERY_IMAGE_HEIGHT));
   }
 }
 
+void recheck_bluetooth(void *data) {
+    app_timer_cancel(recheck_bluetooth_timer);
+    if (!bluetooth_connection_service_peek()) {
+      fail_mode();
+    }
+}
+
+void bluetooth_connection_handler(bool connected) {
+  if (connected) {
+    reset_fail_mode();
+  } else {
+    recheck_bluetooth_timer = app_timer_register(3000, recheck_bluetooth, NULL);
+  }
+}
 
 
 void init() {
@@ -586,11 +570,11 @@ void init() {
   layer_set_clips(seconds_layer, true);
   layer_add_child(date_container_layer, seconds_layer);
 
-  // Status setup
+  // Battery status setup
   icon_battery = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BATTERY);
   icon_battery_charge = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHARGING);
 
-  battery_layer = layer_create(GRect(SCREEN_WIDTH-8,4,8,16));
+  battery_layer = layer_create(GRect(SCREEN_WIDTH-BATTERY_IMAGE_WIDTH,4,BATTERY_IMAGE_WIDTH,BATTERY_IMAGE_HEIGHT));
   BatteryChargeState initial = battery_state_service_peek();
   battery_level = initial.charge_percent;
   battery_plugged = initial.is_plugged;
@@ -602,7 +586,6 @@ void init() {
   inverter_layer = inverter_layer_get_layer(full_inverse_layer);
 
   // Display
-  inverted = !bluetooth_connection_service_peek();
   window_set_background_color(window, GColorBlack);
 
   display_time(tick_time);
@@ -614,6 +597,8 @@ void init() {
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
   battery_state_service_subscribe(&handle_battery);
   handle_battery(battery_state_service_peek());
+  bluetooth_connection_service_subscribe(&bluetooth_connection_handler);
+  bluetooth_connection_handler(bluetooth_connection_service_peek());
 }
 
 void deinit() {
