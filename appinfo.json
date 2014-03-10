@@ -4,7 +4,7 @@
   "longName": "Tomz Big Time Japanese",
   "companyName": "Tom Fukushima",
   "versionCode": 2,
-  "versionLabel": "2.6.5",
+  "versionLabel": "2.7.0",
   "watchapp": {
     "watchface": true
   },
@@ -70,52 +70,52 @@
       {
         "type": "png",
         "name": "IMAGE_DATE_0",
-        "file": "images/date_0.png"
+        "file": "images/small_0.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_1",
-        "file": "images/date_1.png"
+        "file": "images/small_1.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_2",
-        "file": "images/date_2.png"
+        "file": "images/small_2.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_3",
-        "file": "images/date_3.png"
+        "file": "images/small_3.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_4",
-        "file": "images/date_4.png"
+        "file": "images/small_4.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_5",
-        "file": "images/date_5.png"
+        "file": "images/small_5.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_6",
-        "file": "images/date_6.png"
+        "file": "images/small_6.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_7",
-        "file": "images/date_7.png"
+        "file": "images/small_7.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_8",
-        "file": "images/date_8.png"
+        "file": "images/small_8.png"
       },
       {
         "type": "png",
         "name": "IMAGE_DATE_9",
-        "file": "images/date_9.png"
+        "file": "images/small_9.png"
       },
       {
         "type": "png",
